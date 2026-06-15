@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import literal
+from sqlmodel import select
 from app.routers import root, info, recipes
 from app import database
 from app.database import get_db
@@ -28,7 +29,7 @@ app.include_router(recipes.router)
 
 @app.get("/health/readiness")
 async def readiness(session: AsyncSession = Depends(get_db)) -> dict:
-    await session.execute(text("SELECT 1"))
+    await session.exec(select(literal(1)))
     return {"status": "UP"}
 
 
