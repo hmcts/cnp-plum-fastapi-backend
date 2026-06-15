@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import root
+from app.routers import root, info
 
 # Uncomment to enable Azure Application Insights telemetry.
 # Requires APPLICATIONINSIGHTS_CONNECTION_STRING environment variable.
@@ -9,6 +9,7 @@ from app.routers import root
 app = FastAPI(title="fastapi-backend")
 
 app.include_router(root.router)
+app.include_router(info.router)
 
 
 @app.get("/health/readiness")
