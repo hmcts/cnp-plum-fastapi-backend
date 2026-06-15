@@ -1,7 +1,10 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy import text
 from app.routers import root, info, recipes
 from app import database
+from app.database import get_db
 
 # Uncomment to enable Azure Application Insights telemetry.
 # Requires APPLICATIONINSIGHTS_CONNECTION_STRING environment variable.
@@ -24,7 +27,8 @@ app.include_router(recipes.router)
 
 
 @app.get("/health/readiness")
-async def readiness() -> dict:
+async def readiness(session: AsyncSession = Depends(get_db)) -> dict:
+    await session.execute(text("SELECT 1"))
     return {"status": "UP"}
 
 
