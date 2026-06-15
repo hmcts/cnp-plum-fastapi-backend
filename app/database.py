@@ -1,18 +1,21 @@
 import os
 from collections.abc import AsyncGenerator
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.engine import URL
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker, AsyncEngine
 
-_engine = None
+_engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker | None = None
 
 
-def _build_url() -> str:
-    host = os.environ.get("POSTGRES_HOST", "localhost")
-    port = os.environ.get("POSTGRES_PORT", "5432")
-    dbname = os.environ.get("POSTGRES_DATABASE", "plum")
-    user = os.environ.get("POSTGRES_USER", "")
-    password = os.environ.get("POSTGRES_PASSWORD", "")
-    return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{dbname}"
+def _build_url() -> URL:
+    return URL.create(
+        drivername="postgresql+asyncpg",
+        username=os.environ.get("POSTGRES_USER", ""),
+        password=os.environ.get("POSTGRES_PASSWORD", ""),
+        host=os.environ.get("POSTGRES_HOST", "localhost"),
+        port=int(os.environ.get("POSTGRES_PORT", "5432")),
+        database=os.environ.get("POSTGRES_DATABASE", "plum"),
+    )
 
 
 def _build_connect_args() -> dict:
@@ -32,11 +35,15 @@ async def open_engine() -> None:
 
 
 async def close_engine() -> None:
+    global _engine, _session_factory
     if _engine:
         await _engine.dispose()
+    _engine = None
+    _session_factory = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    assert _session_factory is not None, "Database engine not initialised"
+    if _session_factory is None:
+        raise RuntimeError("Database engine not initialised — was open_engine() called?")
     async with _session_factory() as session:
         yield session
