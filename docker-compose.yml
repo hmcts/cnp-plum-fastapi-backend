@@ -7,12 +7,15 @@ services:
         - https_proxy
         - no_proxy
     image: hmctsprod.azurecr.io/plum/fastapi-backend
+    cpus: 2.5
+    mem_limit: 1024M
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_DATABASE: rhubarbdb
       POSTGRES_USER: rhubarbuser
       POSTGRES_PASSWORD: rhubarbpassword
       POSTGRES_SSL_MODE: disable
+      APPLICATIONINSIGHTS_CONNECTION_STRING:
     ports:
       - 8000:8000
     depends_on:
