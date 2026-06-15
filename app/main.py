@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.routers import root, info
+from app.routers import root, info, recipes
 from app import database
 
 # Uncomment to enable Azure Application Insights telemetry.
@@ -20,6 +20,7 @@ app = FastAPI(title="fastapi-backend", lifespan=lifespan)
 
 app.include_router(root.router)
 app.include_router(info.router)
+app.include_router(recipes.router)
 
 
 @app.get("/health/readiness")
