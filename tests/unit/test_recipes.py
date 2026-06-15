@@ -44,6 +44,22 @@ def client(mock_session):
     app.dependency_overrides.clear()
 
 
+@pytest.fixture
+def client_404(mock_session):
+    from app.main import app
+    from app.database import get_db
+
+    mock_session.get = AsyncMock(return_value=None)
+
+    async def override_get_db():
+        yield mock_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+
 def test_get_all_recipes_returns_200(client):
     response = client.get("/recipes")
     assert response.status_code == 200
@@ -91,17 +107,6 @@ def test_get_recipe_by_id_does_not_expose_user_id(client):
     assert "userId" not in response.json()
 
 
-def test_get_recipe_by_id_returns_404_when_not_found(mock_session):
-    from app.main import app
-    from app.database import get_db
-
-    mock_session.get = AsyncMock(return_value=None)
-
-    async def override_get_db():
-        yield mock_session
-
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as c:
-        response = c.get("/recipes/nonexistent")
-    app.dependency_overrides.clear()
+def test_get_recipe_by_id_returns_404_when_not_found(client_404):
+    response = client_404.get("/recipes/nonexistent")
     assert response.status_code == 404
