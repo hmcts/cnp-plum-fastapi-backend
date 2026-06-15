@@ -1,22 +1,29 @@
-import os
+import platform
+from importlib.metadata import version
 from fastapi import APIRouter
 from pydantic import BaseModel
 
 router = APIRouter()
 
 
+class DependencyVersions(BaseModel):
+    fastapi: str
+    sqlmodel: str
+    python: str
+
+
 class InfoResponse(BaseModel):
-    version: str
-    buildNumber: str
-    gitCommit: str
-    date: str
+    app: str
+    dependencies: DependencyVersions
 
 
 @router.get("/info", response_model=InfoResponse)
 async def info() -> InfoResponse:
     return InfoResponse(
-        version=os.environ.get("APP_VERSION", "0.1.0"),
-        buildNumber=os.environ.get("BUILD_NUMBER", "unknown"),
-        gitCommit=os.environ.get("GIT_COMMIT", "unknown"),
-        date=os.environ.get("BUILD_DATE", "unknown"),
+        app=version("plum-fastapi-backend"),
+        dependencies=DependencyVersions(
+            fastapi=version("fastapi"),
+            sqlmodel=version("sqlmodel"),
+            python=platform.python_version(),
+        ),
     )
