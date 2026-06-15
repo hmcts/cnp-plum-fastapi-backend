@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 @pytest.fixture
 def mock_session():
     session = AsyncMock()
-    session.execute = AsyncMock(return_value=MagicMock())
+    session.exec = AsyncMock(return_value=MagicMock())
     return session
 
 
