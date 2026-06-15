@@ -4,10 +4,7 @@ from fastapi import FastAPI
 from app.routers import root, info, recipes, health
 from app import database
 
-# Uncomment to enable Azure Application Insights telemetry.
-# Requires APPLICATIONINSIGHTS_CONNECTION_STRING environment variable.
-# from azure.monitor.opentelemetry import configure_azure_monitor
-# configure_azure_monitor()
+
 
 _ENABLE_DOCS = os.environ.get("ENABLE_DOCS", "false").lower() == "true"
 
