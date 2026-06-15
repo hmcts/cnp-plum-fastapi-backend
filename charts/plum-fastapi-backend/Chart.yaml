@@ -5,8 +5,8 @@ name: plum-fastapi-backend
 home: https://github.com/hmcts/plum-fastapi-backend
 version: 0.0.1
 maintainers:
-  - name: HMCTS plum team
+  - name: HMCTS Platform Operations
 dependencies:
   - name: python
     version: 0.1.0
-    repository: 'oci://hmctsprod.azurecr.io/helm'
+    repository: "oci://hmctsprod.azurecr.io/helm"
