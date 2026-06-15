@@ -29,7 +29,8 @@ async def open_engine() -> None:
     global _engine, _session_factory
     _engine = create_async_engine(
         _build_url(),
-        connect_args=_build_connect_args(),
+        connect_args={**_build_connect_args(), "command_timeout": 10},
+        pool_pre_ping=True,
     )
     _session_factory = async_sessionmaker(_engine, expire_on_commit=False)
 
