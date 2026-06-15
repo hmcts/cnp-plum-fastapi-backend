@@ -1,0 +1,20 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: "plum-fastapi-backend"
+  description: A backend service written in Python using FastAPI
+  annotations:
+    # This must match folder-name/job-name in Jenkins.
+    jenkins.io/job-full-name: cft:HMCTS_plum/plum-fastapi-backend
+    github.com/project-slug: 'hmcts/plum-fastapi-backend'
+  tags:
+    - python
+  links:
+    - url: https://hmcts-reform.slack.com/app_redirect?channel=platops-help
+      title: platops-help on Slack
+      icon: chat
+spec:
+  type: service
+  system: plum
+  lifecycle: experimental
+  owner: group:default/cjs_common_platform

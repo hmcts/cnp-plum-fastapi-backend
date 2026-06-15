@@ -1,0 +1,11 @@
+services:
+  fastapi-backend:
+    build:
+      context: .
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    image: hmctsprod.azurecr.io/plum/fastapi-backend
+    ports:
+      - 8000:8000

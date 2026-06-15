@@ -1,0 +1,7 @@
+* @hmcts/platform-operations @hmcts/developer-enablement
+
+# Ignore files updated by Renovate
+Dockerfile
+pyproject.toml
+charts/**/Chart.yaml
+.github/workflows/*.yml
