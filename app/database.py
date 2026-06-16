@@ -33,7 +33,7 @@ async def open_engine() -> None:
         connect_args={**_build_connect_args(), "command_timeout": 10},
         pool_pre_ping=True,
     )
-    _session_factory = async_sessionmaker(_engine, expire_on_commit=False)
+    _session_factory = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def close_engine() -> None:
