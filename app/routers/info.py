@@ -8,7 +8,7 @@ router = APIRouter()
 
 class DependencyVersions(BaseModel):
     fastapi: str
-    sqlmodel: str
+    httpx: str
     python: str
 
 
@@ -23,7 +23,7 @@ async def info() -> InfoResponse:
         app=version("plum-fastapi-backend"),
         dependencies=DependencyVersions(
             fastapi=version("fastapi"),
-            sqlmodel=version("sqlmodel"),
+            httpx=version("httpx"),
             python=platform.python_version(),
         ),
     )

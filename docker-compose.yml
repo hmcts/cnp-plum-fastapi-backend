@@ -10,47 +10,7 @@ services:
     cpus: 2.5
     mem_limit: 1024M
     environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_DATABASE: rhubarbdb
-      POSTGRES_USER: rhubarbuser
-      POSTGRES_PASSWORD: rhubarbpassword
-      POSTGRES_SSL_MODE: disable
+      RECIPES_SERVICE_URL: http://recipes-service:4550
       APPLICATIONINSIGHTS_CONNECTION_STRING:
     ports:
       - 8000:8000
-    depends_on:
-      migrations:
-        condition: service_completed_successfully
-
-  migrations:
-    build:
-      context: .
-      args:
-        - http_proxy
-        - https_proxy
-        - no_proxy
-    image: hmctsprod.azurecr.io/plum/fastapi-backend
-    command: ["/venv/bin/alembic", "upgrade", "head"]
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_DATABASE: rhubarbdb
-      POSTGRES_USER: rhubarbuser
-      POSTGRES_PASSWORD: rhubarbpassword
-      POSTGRES_SSL_MODE: disable
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  postgres:
-    image: postgres:18-alpine
-    environment:
-      POSTGRES_USER: rhubarbuser
-      POSTGRES_PASSWORD: rhubarbpassword
-      POSTGRES_DB: rhubarbdb
-    ports:
-      - 5460:5432
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rhubarbuser -d rhubarbdb"]
-      interval: 5s
-      timeout: 5s
-      retries: 5

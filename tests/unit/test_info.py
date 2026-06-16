@@ -36,9 +36,9 @@ def test_info_fastapi_version(client):
     assert data["dependencies"]["fastapi"] == version("fastapi")
 
 
-def test_info_sqlmodel_version(client):
+def test_info_httpx_version(client):
     data = client.get("/info").json()
-    assert data["dependencies"]["sqlmodel"] == version("sqlmodel")
+    assert data["dependencies"]["httpx"] == version("httpx")
 
 
 def test_info_python_version(client):

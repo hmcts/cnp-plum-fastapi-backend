@@ -1,14 +1,14 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.routers import root, info, recipes, health
-from app import database
+from app import http_client
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await database.open_engine()
+    await http_client.open_client()
     yield
-    await database.close_engine()
+    await http_client.close_client()
 
 
 app = FastAPI(
