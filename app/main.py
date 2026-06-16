@@ -1,21 +1,22 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.routers import root
+from app.routers import root, info, recipes, health
+from app import http_client
 
-# Uncomment to enable Azure Application Insights telemetry.
-# Requires APPLICATIONINSIGHTS_CONNECTION_STRING environment variable.
-# from azure.monitor.opentelemetry import configure_azure_monitor
-# configure_azure_monitor()
 
-app = FastAPI(title="fastapi-backend")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await http_client.open_client()
+    yield
+    await http_client.close_client()
+
+
+app = FastAPI(
+    title="fastapi-backend",
+    lifespan=lifespan,
+)
 
 app.include_router(root.router)
-
-
-@app.get("/health/readiness")
-async def readiness() -> dict:
-    return {"status": "UP"}
-
-
-@app.get("/health/liveness")
-async def liveness() -> dict:
-    return {"status": "UP"}
+app.include_router(info.router)
+app.include_router(recipes.router)
+app.include_router(health.router)

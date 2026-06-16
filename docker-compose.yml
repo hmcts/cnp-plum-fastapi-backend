@@ -7,5 +7,10 @@ services:
         - https_proxy
         - no_proxy
     image: hmctsprod.azurecr.io/plum/fastapi-backend
+    cpus: 2.5
+    mem_limit: 1024M
+    environment:
+      RECIPES_SERVICE_URL: http://recipes-service:4550
+      APPLICATIONINSIGHTS_CONNECTION_STRING:
     ports:
       - 8000:8000

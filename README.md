@@ -39,10 +39,6 @@ uv run pytest tests/smoke -v         # smoke tests (requires TEST_URL env var)
 uv run pytest tests/functional -v    # functional tests (requires TEST_URL env var)
 ```
 
-## Application Insights
-
-To enable Azure Application Insights telemetry, uncomment the two lines in `app/main.py` and add `azure-monitor-opentelemetry` to `pyproject.toml`. Set the `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable at runtime.
-
 ## Database (PostgreSQL)
 
 To enable PostgreSQL, uncomment the `postgresql` block in `charts/plum-fastapi-backend/values.yaml` and add your database config to the `environment` section.
