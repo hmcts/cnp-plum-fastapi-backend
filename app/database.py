@@ -1,7 +1,8 @@
 import os
 from collections.abc import AsyncGenerator
 from sqlalchemy.engine import URL
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker, AsyncEngine
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncEngine
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker | None = None
