@@ -39,6 +39,38 @@ uv run pytest tests/smoke -v         # smoke tests (requires TEST_URL env var)
 uv run pytest tests/functional -v    # functional tests (requires TEST_URL env var)
 ```
 
+## Managing dependencies
+
+Dependencies are managed with [uv](https://docs.astral.sh/uv/). The `uv.lock` file must always be committed — the Docker build uses `--frozen` and will fail if it is missing or out of sync.
+
+### Adding a dependency
+
+```bash
+uv add <package>          # production dependency
+uv add --dev <package>    # development-only dependency (not installed in Docker)
+```
+
+This updates both `pyproject.toml` and `uv.lock`. Commit both files.
+
+### Updating dependencies
+
+```bash
+uv sync          # install/update to match uv.lock
+uv lock --upgrade  # regenerate uv.lock with latest compatible versions
+```
+
+### Supply chain security
+
+The Dockerfile passes `--exclude-newer` to `uv sync` at build time, set dynamically to 7 days ago. This prevents packages released in the last 7 days from being installed, reducing exposure to supply chain attacks targeting newly published versions.
+
+When regenerating `uv.lock` locally, you can apply the same constraint:
+
+```bash
+uv lock --exclude-newer "$(date -u -d '7 days ago' '+%Y-%m-%dT%H:%M:%SZ')"
+```
+
+`UV_MALWARE_CHECK=1` is also set in the Dockerfile, enabling uv's built-in malware scanning during install.
+
 ## Database (PostgreSQL)
 
 To enable PostgreSQL, uncomment the `postgresql` block in `charts/plum-fastapi-backend/values.yaml` and add your database config to the `environment` section.
