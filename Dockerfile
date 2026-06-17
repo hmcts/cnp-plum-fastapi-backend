@@ -1,8 +1,10 @@
 # ---- Builder: install app and dependencies ----
 FROM python:3.13-slim-trixie AS builder
 # renovate: datasource=github-releases depName=astral-sh/uv
-COPY --from=ghcr.io/astral-sh/uv:0.11.21 /uv /bin/
-ENV UV_MALWARE_CHECK=1
+COPY --from=ghcr.io/astral-sh/uv:0.11.21 /uv /uvx /bin/
+ENV UV_MALWARE_CHECK=1 \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_LINK_MODE=copy
 WORKDIR /build
 COPY pyproject.toml uv.lock ./
 RUN uv sync \
