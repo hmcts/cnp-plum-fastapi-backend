@@ -61,15 +61,19 @@ uv lock --upgrade  # regenerate uv.lock with latest compatible versions
 
 ### Supply chain security
 
-The Dockerfile passes `--exclude-newer` to `uv sync` at build time, set dynamically to 7 days ago. This prevents packages released in the last 7 days from being installed, reducing exposure to supply chain attacks targeting newly published versions.
-
-When regenerating `uv.lock` locally, you can apply the same constraint:
+The `uv.lock` file is the source of truth for supply chain security. When generating or updating the lockfile, you **must** pass `--exclude-newer` set to 7 days ago — this prevents packages released in the last 7 days from being pinned, reducing exposure to supply chain attacks targeting newly published versions:
 
 ```bash
 uv lock --exclude-newer "$(date -u -d '7 days ago' '+%Y-%m-%dT%H:%M:%SZ')"
 ```
 
-`UV_MALWARE_CHECK=1` is also set in the Dockerfile, enabling uv's built-in malware scanning during install.
+Use the same flag when adding a new dependency:
+
+```bash
+uv add <package> --exclude-newer "$(date -u -d '7 days ago' '+%Y-%m-%dT%H:%M:%SZ')"
+```
+
+`UV_MALWARE_CHECK=1` is set in the Dockerfile, enabling uv's built-in malware scanning during install.
 
 ## Database (PostgreSQL)
 

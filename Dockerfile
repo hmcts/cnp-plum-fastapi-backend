@@ -10,9 +10,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync \
       --frozen \
       --no-dev \
-      --no-cache \
       --no-install-project \
-      --exclude-newer "$(date -u -d '7 days ago' '+%Y-%m-%dT%H:%M:%SZ')" \
       --python /usr/local/bin/python3.13 && \
     cp -r .venv/lib/python3.13/site-packages /opt/deps
 
