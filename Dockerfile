@@ -1,16 +1,21 @@
-FROM python:3.13-slim-trixie AS build
-RUN apt-get update && \
-    apt-get install --no-install-suggests --no-install-recommends --yes gcc libc6-dev && \
-    ln -s /usr/local/bin/python /usr/bin/python && \
-    /usr/bin/python -m venv /venv && \
-    /venv/bin/pip install --upgrade pip setuptools wheel
-
+# ---- Builder: install app and dependencies ----
+FROM python:3.13-slim-trixie AS builder
+# renovate: datasource=github-releases depName=astral-sh/uv
+COPY --from=ghcr.io/astral-sh/uv:0.11.21 /uv /bin/
+WORKDIR /build
 COPY pyproject.toml .
-RUN /venv/bin/pip install --disable-pip-version-check .
+COPY app/ app/
+RUN uv pip install \
+      --no-cache \
+      --target=/opt/deps \
+      --python /usr/local/bin/python3.13 \
+      --index-url https://pypi.org/simple \
+      .
 
+# ---- Final: HMCTS distroless base (App Insights pre-wired) ----
 FROM hmctsprod.azurecr.io/base/python:3.13-distroless
-COPY --from=build /venv /venv
-COPY app/ /app/
-WORKDIR /app
-ENTRYPOINT ["/venv/bin/python3"]
-CMD ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+COPY --from=builder /opt/deps /opt/deps
+ENV PYTHONPATH=/opt/otel:/opt/deps
+
+CMD ["-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
