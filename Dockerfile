@@ -1,5 +1,5 @@
 # ---- Builder: install app and dependencies ----
-FROM python:3.13-slim-trixie AS builder
+FROM hmctsprod.azurecr.io/imported/slim/python:3.13-slim-trixie AS builder
 # renovate: datasource=github-releases depName=astral-sh/uv
 COPY --from=ghcr.io/astral-sh/uv:0.11.21 /uv /uvx /bin/
 ENV UV_MALWARE_CHECK=1 \
