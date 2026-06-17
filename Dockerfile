@@ -2,15 +2,18 @@
 FROM python:3.13-slim-trixie AS builder
 # renovate: datasource=github-releases depName=astral-sh/uv
 COPY --from=ghcr.io/astral-sh/uv:0.11.21 /uv /bin/
+ENV UV_MALWARE_CHECK=1
 WORKDIR /build
-COPY pyproject.toml .
+COPY pyproject.toml uv.lock ./
 COPY app/ app/
-RUN uv pip install \
+RUN uv sync \
+      --frozen \
+      --no-dev \
       --no-cache \
-      --target=/opt/deps \
-      --python /usr/local/bin/python3.13 \
-      --index-url https://pypi.org/simple \
-      .
+      --no-editable \
+      --exclude-newer "$(date -u -d '7 days ago' '+%Y-%m-%dT%H:%M:%SZ')" \
+      --python /usr/local/bin/python3.13 && \
+    cp -r .venv/lib/python3.13/site-packages /opt/deps
 
 # ---- Final: HMCTS distroless base (App Insights pre-wired) ----
 FROM hmctsprod.azurecr.io/base/python:3.13-distroless
