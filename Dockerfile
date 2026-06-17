@@ -8,7 +8,7 @@ ENV UV_MALWARE_CHECK=1 \
 WORKDIR /build
 COPY pyproject.toml uv.lock ./
 RUN uv sync \
-      --frozen \
+      --locked \
       --no-dev \
       --no-install-project \
       --python /usr/local/bin/python3.13 && \
