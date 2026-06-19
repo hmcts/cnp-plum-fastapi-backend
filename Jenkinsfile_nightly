@@ -11,4 +11,4 @@ def type = "python"
 def product = "plum"
 def component = "fastapi-backend"
 
-withNightlyPipeline(type, product, component) {}
+// withNightlyPipeline(type, product, component) {}
