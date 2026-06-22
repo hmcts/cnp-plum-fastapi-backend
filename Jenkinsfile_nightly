@@ -5,10 +5,10 @@ properties([
   pipelineTriggers([cron('H 07 * * 1-5')])
 ])
 
-@Library("Infrastructure")
+@Library("Infrastructure@feat/add-python-support")
 
 def type = "python"
 def product = "plum"
 def component = "fastapi-backend"
 
-// withNightlyPipeline(type, product, component) {}
+withNightlyPipeline(type, product, component) {}
