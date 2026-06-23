@@ -1,6 +1,6 @@
 #!groovy
 
-@Library("Infrastructure@feat/add-python-support")
+@Library("Infrastructure")
 
 def type = "python"
 def product = "plum"
