@@ -12,6 +12,11 @@ def _recipes_health_url() -> str:
     return f"{base.rstrip('/')}/health/readiness"
 
 
+@router.get("")
+async def health() -> dict:
+    return {"status": "UP"}
+
+
 @router.get("/readiness")
 async def readiness():
     try:
