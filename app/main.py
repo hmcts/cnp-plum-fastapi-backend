@@ -9,7 +9,10 @@ logger = logging.getLogger(__name__)
 
 class _HealthCheckFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
-        return "/health/" not in record.getMessage()
+        message = record.getMessage()
+        # Only suppress successful health check requests to avoid log noise.
+        # Failed health checks are kept visible to aid debugging (e.g. k8s probe failures).
+        return not ("/health" in message and " 200" in message)
 
 
 logging.getLogger("uvicorn.access").addFilter(_HealthCheckFilter())
