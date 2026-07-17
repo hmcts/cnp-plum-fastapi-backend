@@ -96,7 +96,7 @@ async def chat_frontend(request: ChatRequest):
         raise HTTPException(status_code=500, detail="Could not acquire gateway token")
 
     headers = {
-        "Authorization": f"******",
+        "Authorization": f"Bearer {token}",
         "Ocp-Apim-Subscription-Key": _frontend_subscription_key(),
         "Content-Type": "application/json",
     }
