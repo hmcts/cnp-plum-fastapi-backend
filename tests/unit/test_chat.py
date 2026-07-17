@@ -82,3 +82,35 @@ def test_chat_requires_messages(client):
     with patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")):
         response = client.post("/chat", json={})
     assert response.status_code == 422
+
+
+# --- /chat/frontend endpoint tests ---
+
+@pytest.fixture
+def frontend_env(monkeypatch):
+    monkeypatch.setenv("AI_GATEWAY_SUBSCRIPTION_KEY_FRONTEND", "test-frontend-sub-key")
+
+
+def test_chat_frontend_returns_200_and_proxies_response(client, frontend_env):
+    data = {"choices": [{"message": {"role": "assistant", "content": "hi"}}]}
+    mock_client = make_mock_http_client(200, data)
+    with patch("app.http_client._client", mock_client), \
+         patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")):
+        response = client.post("/chat/frontend", json={"messages": [{"role": "user", "content": "hi"}]})
+    assert response.status_code == 200
+    assert response.json() == data
+
+
+def test_chat_frontend_uses_frontend_subscription_key(client, frontend_env):
+    mock_client = make_mock_http_client(200, {})
+    with patch("app.http_client._client", mock_client), \
+         patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")):
+        client.post("/chat/frontend", json={"messages": [{"role": "user", "content": "hi"}]})
+    _, kwargs = mock_client.post.call_args
+    assert kwargs["headers"]["Ocp-Apim-Subscription-Key"] == "test-frontend-sub-key"
+
+
+def test_chat_frontend_returns_500_when_key_missing(client):
+    with patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")):
+        response = client.post("/chat/frontend", json={"messages": [{"role": "user", "content": "hi"}]})
+    assert response.status_code == 500

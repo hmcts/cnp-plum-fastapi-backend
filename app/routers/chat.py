@@ -42,6 +42,17 @@ def _subscription_key() -> str:
     return key
 
 
+def _frontend_subscription_key() -> str:
+    key_file = os.environ.get("AI_GATEWAY_SUBSCRIPTION_KEY_FRONTEND_FILE")
+    if key_file:
+        with open(key_file) as f:
+            return f.read().strip()
+    key = os.environ.get("AI_GATEWAY_SUBSCRIPTION_KEY_FRONTEND")
+    if not key:
+        raise HTTPException(status_code=500, detail="AI Gateway frontend subscription key is not configured")
+    return key
+
+
 @router.post("")
 async def chat(request: ChatRequest):
     payload: dict = {"messages": request.messages}
@@ -58,6 +69,35 @@ async def chat(request: ChatRequest):
     headers = {
         "Authorization": f"Bearer {token}",
         "Ocp-Apim-Subscription-Key": _subscription_key(),
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = await get_client().post(
+            _gateway_url(), json=payload, headers=headers, timeout=30.0
+        )
+        return JSONResponse(content=response.json(), status_code=response.status_code)
+    except httpx.RequestError as exc:
+        logger.error("Failed to reach AI Gateway: %s", exc)
+        raise HTTPException(status_code=502, detail="Could not reach AI Gateway")
+
+
+@router.post("/frontend")
+async def chat_frontend(request: ChatRequest):
+    payload: dict = {"messages": request.messages}
+    model = request.model or os.environ.get("AI_GATEWAY_MODEL")
+    if model:
+        payload["model"] = model
+
+    try:
+        token = await azure_auth.get_token(_gateway_scope())
+    except Exception:
+        logger.exception("Failed to acquire AI Gateway token")
+        raise HTTPException(status_code=500, detail="Could not acquire gateway token")
+
+    headers = {
+        "Authorization": f"******",
+        "Ocp-Apim-Subscription-Key": _frontend_subscription_key(),
         "Content-Type": "application/json",
     }
 
