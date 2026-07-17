@@ -7,6 +7,14 @@ from app import http_client, azure_auth
 logger = logging.getLogger(__name__)
 
 
+class _HealthCheckFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return "/health/" not in record.getMessage()
+
+
+logging.getLogger("uvicorn.access").addFilter(_HealthCheckFilter())
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("plum-fastapi-backend starting up")

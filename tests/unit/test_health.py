@@ -50,3 +50,13 @@ def test_liveness_returns_up(client):
     assert response.status_code == 200
     assert response.json() == {"status": "UP"}
 
+
+def test_health_check_filter_suppresses_health_logs():
+    import logging
+    from app.main import _HealthCheckFilter
+    f = _HealthCheckFilter()
+    health_record = logging.makeLogRecord({"msg": '10.0.0.1 - "GET /health/liveness HTTP/1.1" 200'})
+    other_record = logging.makeLogRecord({"msg": '10.0.0.1 - "GET /chat HTTP/1.1" 200'})
+    assert f.filter(health_record) is False
+    assert f.filter(other_record) is True
+
