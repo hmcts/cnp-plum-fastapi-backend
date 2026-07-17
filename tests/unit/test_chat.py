@@ -114,3 +114,65 @@ def test_chat_frontend_returns_500_when_key_missing(client):
     with patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")):
         response = client.post("/chat/frontend", json={"messages": [{"role": "user", "content": "hi"}]})
     assert response.status_code == 500
+
+
+def test_chat_returns_500_when_url_missing(monkeypatch, client):
+    monkeypatch.delenv("AI_GATEWAY_URL")
+    with patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")), \
+         patch("app.http_client._client", make_mock_http_client(200, {})):
+        response = client.post("/chat", json={"messages": [{"role": "user", "content": "hi"}]})
+    assert response.status_code == 500
+
+
+def test_chat_returns_500_when_scope_missing(monkeypatch, client):
+    monkeypatch.delenv("AI_GATEWAY_SCOPE")
+    with patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")), \
+         patch("app.http_client._client", make_mock_http_client(200, {})):
+        response = client.post("/chat", json={"messages": [{"role": "user", "content": "hi"}]})
+    assert response.status_code == 500
+
+
+def test_chat_returns_500_when_token_fails(client):
+    with patch("app.azure_auth.get_token", AsyncMock(side_effect=Exception("auth error"))):
+        response = client.post("/chat", json={"messages": [{"role": "user", "content": "hi"}]})
+    assert response.status_code == 500
+
+
+def test_chat_frontend_returns_500_when_token_fails(client, frontend_env):
+    with patch("app.azure_auth.get_token", AsyncMock(side_effect=Exception("auth error"))):
+        response = client.post("/chat/frontend", json={"messages": [{"role": "user", "content": "hi"}]})
+    assert response.status_code == 500
+
+
+def test_chat_frontend_returns_502_when_gateway_unreachable(client, frontend_env):
+    import httpx
+    mock_client = AsyncMock()
+    mock_client.post.side_effect = httpx.ConnectError("Connection refused")
+    with patch("app.http_client._client", mock_client), \
+         patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")):
+        response = client.post("/chat/frontend", json={"messages": [{"role": "user", "content": "hi"}]})
+    assert response.status_code == 502
+
+
+def test_subscription_key_read_from_file(tmp_path, client):
+    key_file = tmp_path / "sub_key"
+    key_file.write_text("file-based-key\n")
+    mock_client = make_mock_http_client(200, {})
+    with patch("app.http_client._client", mock_client), \
+         patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")), \
+         patch.dict("os.environ", {"AI_GATEWAY_SUBSCRIPTION_KEY_FILE": str(key_file)}):
+        client.post("/chat", json={"messages": [{"role": "user", "content": "hi"}]})
+    _, kwargs = mock_client.post.call_args
+    assert kwargs["headers"]["Ocp-Apim-Subscription-Key"] == "file-based-key"
+
+
+def test_frontend_subscription_key_read_from_file(tmp_path, client):
+    key_file = tmp_path / "frontend_key"
+    key_file.write_text("file-based-frontend-key\n")
+    mock_client = make_mock_http_client(200, {})
+    with patch("app.http_client._client", mock_client), \
+         patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")), \
+         patch.dict("os.environ", {"AI_GATEWAY_SUBSCRIPTION_KEY_FRONTEND_FILE": str(key_file)}):
+        client.post("/chat/frontend", json={"messages": [{"role": "user", "content": "hi"}]})
+    _, kwargs = mock_client.post.call_args
+    assert kwargs["headers"]["Ocp-Apim-Subscription-Key"] == "file-based-frontend-key"
