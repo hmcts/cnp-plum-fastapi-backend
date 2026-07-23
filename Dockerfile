@@ -3,7 +3,7 @@
 ARG REGISTRY_NAME=hmctsprod
 FROM ${REGISTRY_NAME}.azurecr.io/imported/slim/python:3.13-slim-trixie AS builder
 # renovate: datasource=github-releases depName=astral-sh/uv
-COPY --from=ghcr.io/astral-sh/uv:0.11.29 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.11.31 /uv /uvx /bin/
 ENV UV_MALWARE_CHECK=1 \
     UV_PYTHON_DOWNLOADS=never \
     UV_LINK_MODE=copy
