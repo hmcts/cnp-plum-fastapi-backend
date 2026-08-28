@@ -101,6 +101,9 @@ async def chat_frontend(request: ChatRequest):
         "Content-Type": "application/json",
     }
 
+    if internal_team is not None:
+        headers["x-internal-team"] = internal_team
+
     try:
         response = await get_client().post(
             _gateway_url(), json=payload, headers=headers, timeout=30.0
