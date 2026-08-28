@@ -1,7 +1,7 @@
 import logging
 import os
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from app.http_client import get_client
