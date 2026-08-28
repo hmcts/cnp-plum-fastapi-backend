@@ -1,7 +1,7 @@
 import logging
 import os
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from app.http_client import get_client
@@ -83,7 +83,10 @@ async def chat(request: ChatRequest):
 
 
 @router.post("/frontend")
-async def chat_frontend(request: ChatRequest):
+async def chat_frontend(
+    request: ChatRequest,
+    internal_team: str | None = Header(None, alias="x-internal-team"),
+):
     payload: dict = {"messages": request.messages}
     model = request.model or os.environ.get("AI_GATEWAY_MODEL")
     if model:
@@ -100,6 +103,9 @@ async def chat_frontend(request: ChatRequest):
         "Ocp-Apim-Subscription-Key": _frontend_subscription_key(),
         "Content-Type": "application/json",
     }
+
+    if internal_team is not None:
+        headers["x-internal-team"] = internal_team
 
     try:
         response = await get_client().post(
