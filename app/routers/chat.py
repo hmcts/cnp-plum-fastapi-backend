@@ -83,7 +83,10 @@ async def chat(request: ChatRequest):
 
 
 @router.post("/frontend")
-async def chat_frontend(request: ChatRequest):
+async def chat_frontend(
+    request: ChatRequest,
+    internal_team: str | None = Header(None, alias="x-internal-team"),
+):
     payload: dict = {"messages": request.messages}
     model = request.model or os.environ.get("AI_GATEWAY_MODEL")
     if model:
