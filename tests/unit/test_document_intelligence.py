@@ -89,6 +89,52 @@ def test_document_intelligence_returns_502_when_gateway_unreachable(client):
     assert response.status_code == 502
 
 
+def test_get_document_intelligence_result_proxies_response(client):
+    result = b'{"status":"succeeded","analyzeResult":{"content":"text"}}'
+    mock_client = AsyncMock()
+    mock_client.get.return_value = make_mock_http_response(
+        200,
+        result,
+        {
+            "content-type": "application/json",
+            "x-correlation-id": "correlation-123",
+        },
+    )
+
+    with patch("app.http_client._client", mock_client), \
+         patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")):
+        response = client.get(
+            "/document-intelligence/prebuilt-layout/analyzeResults/result-123"
+        )
+
+    assert response.status_code == 200
+    assert response.content == result
+    assert response.headers["x-correlation-id"] == "correlation-123"
+
+    args, kwargs = mock_client.get.call_args
+    assert args[0] == (
+        "https://gateway.example/ai/platform/v1/document-intelligence/"
+        "documentModels/prebuilt-layout/analyzeResults/result-123"
+    )
+    assert kwargs["headers"] == {
+        "Authorization": "Bearer fake-token",
+        "Ocp-Apim-Subscription-Key": "test-doc-key",
+    }
+
+
+def test_get_document_intelligence_result_returns_502_when_gateway_unreachable(client):
+    mock_client = AsyncMock()
+    mock_client.get.side_effect = httpx.ConnectError("Connection refused")
+
+    with patch("app.http_client._client", mock_client), \
+         patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")):
+        response = client.get(
+            "/document-intelligence/prebuilt-layout/analyzeResults/result-123"
+        )
+
+    assert response.status_code == 502
+
+
 def test_document_intelligence_requires_url(client, monkeypatch):
     monkeypatch.delenv("AI_GATEWAY_DOCUMENT_INTELLIGENCE_URL")
 
