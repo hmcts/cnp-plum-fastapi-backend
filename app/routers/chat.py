@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from app.http_client import get_client
 from app import azure_auth
+from app.gateway import gateway_scope, subscription_key
 
 logger = logging.getLogger(__name__)
 
@@ -25,32 +26,23 @@ def _gateway_url() -> str:
 
 
 def _gateway_scope() -> str:
-    scope = os.environ.get("AI_GATEWAY_SCOPE")
-    if not scope:
-        raise HTTPException(status_code=500, detail="AI_GATEWAY_SCOPE is not configured")
-    return scope
+    return gateway_scope()
 
 
 def _subscription_key() -> str:
-    key_file = os.environ.get("AI_GATEWAY_SUBSCRIPTION_KEY_FILE")
-    if key_file:
-        with open(key_file) as f:
-            return f.read().strip()
-    key = os.environ.get("AI_GATEWAY_SUBSCRIPTION_KEY")
-    if not key:
-        raise HTTPException(status_code=500, detail="AI Gateway subscription key is not configured")
-    return key
+    return subscription_key(
+        "AI_GATEWAY_SUBSCRIPTION_KEY_FILE",
+        "AI_GATEWAY_SUBSCRIPTION_KEY",
+        "AI Gateway subscription key is not configured",
+    )
 
 
 def _frontend_subscription_key() -> str:
-    key_file = os.environ.get("AI_GATEWAY_SUBSCRIPTION_KEY_FRONTEND_FILE")
-    if key_file:
-        with open(key_file) as f:
-            return f.read().strip()
-    key = os.environ.get("AI_GATEWAY_SUBSCRIPTION_KEY_FRONTEND")
-    if not key:
-        raise HTTPException(status_code=500, detail="AI Gateway frontend subscription key is not configured")
-    return key
+    return subscription_key(
+        "AI_GATEWAY_SUBSCRIPTION_KEY_FRONTEND_FILE",
+        "AI_GATEWAY_SUBSCRIPTION_KEY_FRONTEND",
+        "AI Gateway frontend subscription key is not configured",
+    )
 
 
 @router.post("")
