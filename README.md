@@ -15,6 +15,18 @@ uv run uvicorn app.main:app --reload --port 8000
 
 The service will be available at `http://localhost:8000`.
 
+## AI Gateway speech-to-text
+
+`POST /speech-to-text/fast` streams a `multipart/form-data` request to the AI
+Gateway fast transcription capability and returns the complete synchronous
+response. The request must include an `audio` file and may include a
+`definition` field containing transcription options as a JSON string.
+
+This endpoint is currently configured for sandbox only. Set
+`AI_GATEWAY_SPEECH_TO_TEXT_URL`,
+`AI_GATEWAY_SPEECH_TO_TEXT_SUBSCRIPTION_KEY_FILE` (or
+`AI_GATEWAY_SPEECH_TO_TEXT_SUBSCRIPTION_KEY`), and `AI_GATEWAY_SCOPE`.
+
 ## Running locally via Docker
 
 > **Note:** The Dockerfile uses an HMCTS internal base image from `hmctsprod.azurecr.io`. You must be logged in to the registry (`az acr login --name hmctsprod`) before building.

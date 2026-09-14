@@ -1,7 +1,15 @@
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.routers import root, info, recipes, health, chat, document_intelligence
+from app.routers import (
+    root,
+    info,
+    recipes,
+    health,
+    chat,
+    document_intelligence,
+    speech_to_text,
+)
 from app import http_client, azure_auth
 
 logger = logging.getLogger(__name__)
@@ -39,5 +47,6 @@ app.include_router(recipes.router)
 app.include_router(health.router)
 app.include_router(chat.router)
 app.include_router(document_intelligence.router)
+app.include_router(speech_to_text.router)
 
 # Test Jenkins deployment
