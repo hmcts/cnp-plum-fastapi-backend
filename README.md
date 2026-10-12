@@ -27,6 +27,38 @@ This endpoint is currently configured for sandbox only. Set
 `AI_GATEWAY_SPEECH_TO_TEXT_SUBSCRIPTION_KEY_FILE` (or
 `AI_GATEWAY_SPEECH_TO_TEXT_SUBSCRIPTION_KEY`), and `AI_GATEWAY_SCOPE`.
 
+### Transcribing stored audio
+
+The direct `/speech-to-text/fast` endpoint is unchanged. To store a recording
+and transcribe it later:
+
+```bash
+curl -X POST http://localhost:8000/speech-to-text/blobs \
+  -F 'audio=@recording.wav'
+# HTTP 201: {"blob_name":"<generated-id>"}
+
+curl -X POST http://localhost:8000/speech-to-text/fast/blob \
+  -H 'Content-Type: application/json' \
+  -d '{"blob_name":"<generated-id>","definition":{"locales":["en-GB"]}}'
+```
+
+The upload endpoint stores the audio file (not the multipart envelope) under a
+unique name and returns `blob_name`. The transcription endpoint retrieves that
+blob from the configured container and streams it to the same AI Gateway fast
+transcription capability. `definition` is optional and is a JSON object here,
+rather than the JSON-string form field used by `/fast`. Existing blobs in the
+configured container can also be transcribed by name, including names with `/`.
+Gateway responses and operational headers are passed through as with `/fast`.
+
+Set these environment variables through environment-specific Helm values:
+
+```yaml
+python:
+  environment:
+    SPEECH_AUDIO_STORAGE_ACCOUNT_URL: https://<account>.blob.core.windows.net
+    SPEECH_AUDIO_STORAGE_CONTAINER: speech-audio
+```
+
 ## Running locally via Docker
 
 > **Note:** The Dockerfile uses an HMCTS internal base image from `hmctsprod.azurecr.io`. You must be logged in to the registry (`az acr login --name hmctsprod`) before building.

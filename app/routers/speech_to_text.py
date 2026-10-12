@@ -1,10 +1,16 @@
+import json
 import logging
 import os
+from collections.abc import AsyncIterator
+from uuid import uuid4
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request, Response
+from azure.core.exceptions import AzureError, ResourceNotFoundError
+from azure.storage.blob import ContentSettings
+from fastapi import APIRouter, HTTPException, Request, Response, UploadFile
+from pydantic import BaseModel, Field, JsonValue
 
-from app import azure_auth
+from app import azure_auth, blob_storage
 from app.gateway import gateway_scope, subscription_key
 from app.http_client import get_client
 
@@ -70,6 +76,18 @@ def _subscription_key() -> str:
     },
 )
 async def transcribe_audio(request: Request):
+    return await _transcribe(
+        request.stream(),
+        request.headers.get("content-type", "multipart/form-data"),
+        request.headers.get("content-length"),
+    )
+
+
+async def _transcribe(
+    content: AsyncIterator[bytes],
+    content_type: str,
+    content_length: str | None = None,
+) -> Response:
     try:
         token = await azure_auth.get_token(gateway_scope())
     except Exception:
@@ -79,16 +97,15 @@ async def transcribe_audio(request: Request):
     headers = {
         "Authorization": f"Bearer {token}",
         "Ocp-Apim-Subscription-Key": _subscription_key(),
-        "Content-Type": request.headers.get("content-type", "multipart/form-data"),
+        "Content-Type": content_type,
     }
-    content_length = request.headers.get("content-length")
     if content_length is not None:
         headers["Content-Length"] = content_length
 
     try:
         response = await get_client().post(
             f"{_gateway_url()}/transcriptions:transcribe",
-            content=request.stream(),
+            content=content,
             headers=headers,
             timeout=300.0,
         )
@@ -107,3 +124,88 @@ async def transcribe_audio(request: Request):
         status_code=response.status_code,
         headers=response_headers,
     )
+
+
+class AudioBlob(BaseModel):
+    blob_name: str = Field(min_length=1)
+
+
+class BlobTranscription(AudioBlob):
+    definition: dict[str, JsonValue] | None = None
+
+
+async def _audio_chunks(audio: UploadFile) -> AsyncIterator[bytes]:
+    while chunk := await audio.read(1024 * 1024):
+        yield chunk
+
+
+@router.post(
+    "/blobs",
+    status_code=201,
+    response_model=AudioBlob,
+    summary="Upload an audio recording to blob storage",
+)
+async def upload_audio(audio: UploadFile) -> AudioBlob:
+    blob_name = uuid4().hex
+    try:
+        if audio.size == 0:
+            raise HTTPException(status_code=400, detail="Audio file is empty")
+        blob = blob_storage.get_blob_client(blob_name)
+        await blob.upload_blob(
+            _audio_chunks(audio),
+            length=audio.size,
+            overwrite=False,
+            content_settings=ContentSettings(
+                content_type=audio.content_type or "application/octet-stream"
+            ),
+        )
+    except AzureError:
+        logger.exception("Failed to upload audio to blob storage")
+        raise HTTPException(status_code=502, detail="Could not upload audio to blob storage")
+    finally:
+        await audio.close()
+    return AudioBlob(blob_name=blob_name)
+
+
+async def _blob_multipart(
+    chunks: AsyncIterator[bytes], boundary: str, definition: dict[str, JsonValue] | None
+) -> AsyncIterator[bytes]:
+    yield (
+        f"--{boundary}\r\n"
+        'Content-Disposition: form-data; name="audio"; filename="audio"\r\n'
+        "Content-Type: application/octet-stream\r\n\r\n"
+    ).encode()
+    async for chunk in chunks:
+        yield chunk
+    if definition is not None:
+        yield (
+            f"\r\n--{boundary}\r\n"
+            'Content-Disposition: form-data; name="definition"\r\n\r\n'
+        ).encode()
+        yield json.dumps(definition).encode()
+    yield f"\r\n--{boundary}--\r\n".encode()
+
+
+@router.post(
+    "/fast/blob",
+    summary="Transcribe an audio recording from blob storage",
+    description=(
+        "Retrieves a recording from the configured container and streams it to "
+        "the AI Gateway. The stored recording is retained for reuse."
+    ),
+)
+async def transcribe_blob(body: BlobTranscription) -> Response:
+    try:
+        blob = blob_storage.get_blob_client(body.blob_name)
+        download = await blob.download_blob()
+        boundary = uuid4().hex
+        return await _transcribe(
+            _blob_multipart(download.chunks(), boundary, body.definition),
+            f"multipart/form-data; boundary={boundary}",
+        )
+    except ResourceNotFoundError:
+        logger.info("Audio blob not found")
+        raise HTTPException(status_code=404, detail="Audio blob not found")
+    except AzureError:
+        logger.exception("Failed to retrieve audio from blob storage")
+        raise HTTPException(status_code=502, detail="Could not retrieve audio from blob storage")

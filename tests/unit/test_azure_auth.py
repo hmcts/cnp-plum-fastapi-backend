@@ -14,7 +14,7 @@ def reset_credential():
 def test_get_credential_creates_instance():
     with patch("app.azure_auth.WorkloadIdentityCredential") as mock_cls:
         mock_cls.return_value = MagicMock()
-        cred = azure_auth._get_credential()
+        cred = azure_auth.get_credential()
         assert cred is mock_cls.return_value
         mock_cls.assert_called_once()
 
@@ -22,8 +22,8 @@ def test_get_credential_creates_instance():
 def test_get_credential_reuses_instance():
     with patch("app.azure_auth.WorkloadIdentityCredential") as mock_cls:
         mock_cls.return_value = MagicMock()
-        c1 = azure_auth._get_credential()
-        c2 = azure_auth._get_credential()
+        c1 = azure_auth.get_credential()
+        c2 = azure_auth.get_credential()
         assert c1 is c2
         mock_cls.assert_called_once()
 
@@ -32,7 +32,7 @@ def test_get_credential_reuses_instance():
 async def test_get_token_returns_token_string():
     mock_cred = AsyncMock()
     mock_cred.get_token.return_value = MagicMock(token="my-token")
-    with patch("app.azure_auth._get_credential", return_value=mock_cred):
+    with patch("app.azure_auth.get_credential", return_value=mock_cred):
         result = await azure_auth.get_token("api://scope/.default")
     assert result == "my-token"
     mock_cred.get_token.assert_called_once_with("api://scope/.default")
