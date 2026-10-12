@@ -10,7 +10,7 @@ from app.routers import (
     document_intelligence,
     speech_to_text,
 )
-from app import http_client, azure_auth
+from app import http_client, azure_auth, blob_storage
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,7 @@ async def lifespan(app: FastAPI):
     await http_client.open_client()
     yield
     await http_client.close_client()
+    await blob_storage.close_client()
     await azure_auth.close_credential()
     logger.info("plum-fastapi-backend shut down")
 

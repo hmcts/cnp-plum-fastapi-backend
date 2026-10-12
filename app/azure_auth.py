@@ -3,7 +3,7 @@ from azure.identity.aio import WorkloadIdentityCredential
 _credential: WorkloadIdentityCredential | None = None
 
 
-def _get_credential() -> WorkloadIdentityCredential:
+def get_credential() -> WorkloadIdentityCredential:
     global _credential
     if _credential is None:
         # Uses AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_FEDERATED_TOKEN_FILE,
@@ -13,7 +13,7 @@ def _get_credential() -> WorkloadIdentityCredential:
 
 
 async def get_token(scope: str) -> str:
-    token = await _get_credential().get_token(scope)
+    token = await get_credential().get_token(scope)
     return token.token
 
 
