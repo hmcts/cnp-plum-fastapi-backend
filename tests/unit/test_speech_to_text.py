@@ -78,7 +78,7 @@ async def test_speech_to_text_streams_multipart_request_and_proxies_response(cli
         "app.azure_auth.get_token", AsyncMock(return_value="fake-token")
     ):
         response = client.post(
-            "/speech-to-text/fast",
+            "/speech-to-text/fast?api-version=2025-10-15",
             content=body,
             headers={
                 "content-type": content_type,
@@ -101,6 +101,7 @@ async def test_speech_to_text_streams_multipart_request_and_proxies_response(cli
         "Content-Type": content_type,
         "Content-Length": str(len(body)),
     }
+    assert kwargs["params"] == [("api-version", "2025-10-15")]
     assert kwargs["timeout"] == 300.0
 
 
@@ -294,6 +295,7 @@ def test_transcribe_blob_streams_download_and_options(client, definition):
     ), patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")):
         response = client.post(
             "/speech-to-text/fast/blob",
+            params={"api-version": "2025-10-15"},
             json={"blob_name": "folder/audio.wav", "definition": definition},
         )
 
@@ -303,6 +305,7 @@ def test_transcribe_blob_streams_download_and_options(client, definition):
     blob.download_blob.assert_awaited_once()
     blob.delete_blob.assert_not_called()
     kwargs = gateway.post.call_args.kwargs
+    assert kwargs["params"] == [("api-version", "2025-10-15")]
     boundary = kwargs["headers"]["Content-Type"].split("boundary=")[1]
     assert b'name="audio"; filename="audio"' in sent[0]
     assert b"\r\n\r\naudio bytes\r\n" in sent[0]

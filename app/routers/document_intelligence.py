@@ -74,7 +74,7 @@ async def analyze_document(model_id: str, request: Request):
 
 
 @router.get("/{model_id}/analyzeResults/{result_id}")
-async def get_analyze_result(model_id: str, result_id: str):
+async def get_analyze_result(model_id: str, result_id: str, request: Request):
     try:
         token = await azure_auth.get_token(gateway_scope())
     except Exception:
@@ -91,7 +91,12 @@ async def get_analyze_result(model_id: str, result_id: str):
     )
 
     try:
-        response = await get_client().get(gateway_url, headers=headers, timeout=30.0)
+        response = await get_client().get(
+            gateway_url,
+            headers=headers,
+            params=list(request.query_params.multi_items()),
+            timeout=30.0,
+        )
     except httpx.RequestError as exc:
         logger.error("Failed to reach AI Gateway document intelligence: %s", exc)
         raise HTTPException(status_code=502, detail="Could not reach AI Gateway")

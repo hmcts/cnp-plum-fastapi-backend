@@ -105,6 +105,7 @@ def test_get_document_intelligence_result_proxies_response(client):
          patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")):
         response = client.get(
             "/document-intelligence/prebuilt-layout/analyzeResults/result-123"
+            "?api-version=2024-11-30"
         )
 
     assert response.status_code == 200
@@ -116,6 +117,7 @@ def test_get_document_intelligence_result_proxies_response(client):
         "https://gateway.example/ai/platform/v1/document-intelligence/"
         "documentModels/prebuilt-layout/analyzeResults/result-123"
     )
+    assert kwargs["params"] == [("api-version", "2024-11-30")]
     assert kwargs["headers"] == {
         "Authorization": "Bearer fake-token",
         "Ocp-Apim-Subscription-Key": "test-doc-key",
