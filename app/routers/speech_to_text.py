@@ -80,6 +80,7 @@ async def transcribe_audio(request: Request):
         request.stream(),
         request.headers.get("content-type", "multipart/form-data"),
         request.headers.get("content-length"),
+        params=list(request.query_params.multi_items()),
     )
 
 
@@ -87,6 +88,7 @@ async def _transcribe(
     content: AsyncIterator[bytes],
     content_type: str,
     content_length: str | None = None,
+    params: list[tuple[str, str]] | None = None,
 ) -> Response:
     try:
         token = await azure_auth.get_token(gateway_scope())
@@ -107,6 +109,7 @@ async def _transcribe(
             f"{_gateway_url()}/transcriptions:transcribe",
             content=content,
             headers=headers,
+            params=params,
             timeout=300.0,
         )
     except httpx.RequestError as exc:
@@ -194,7 +197,7 @@ async def _blob_multipart(
         "the AI Gateway. The stored recording is retained for reuse."
     ),
 )
-async def transcribe_blob(body: BlobTranscription) -> Response:
+async def transcribe_blob(body: BlobTranscription, request: Request) -> Response:
     try:
         blob = blob_storage.get_blob_client(body.blob_name)
         download = await blob.download_blob()
@@ -202,6 +205,7 @@ async def transcribe_blob(body: BlobTranscription) -> Response:
         return await _transcribe(
             _blob_multipart(download.chunks(), boundary, body.definition),
             f"multipart/form-data; boundary={boundary}",
+            params=list(request.query_params.multi_items()),
         )
     except ResourceNotFoundError:
         logger.info("Audio blob not found")
