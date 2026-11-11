@@ -1,7 +1,7 @@
 import logging
 import os
 import httpx
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from app.http_client import get_client
@@ -46,7 +46,7 @@ def _frontend_subscription_key() -> str:
 
 
 @router.post("")
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, http_request: Request):
     payload: dict = {"messages": request.messages}
     model = request.model or os.environ.get("AI_GATEWAY_MODEL")
     if model:
@@ -66,7 +66,11 @@ async def chat(request: ChatRequest):
 
     try:
         response = await get_client().post(
-            _gateway_url(), json=payload, headers=headers, timeout=30.0
+            _gateway_url(),
+            json=payload,
+            headers=headers,
+            params=list(http_request.query_params.multi_items()),
+            timeout=30.0,
         )
         return JSONResponse(content=response.json(), status_code=response.status_code)
     except httpx.RequestError as exc:
@@ -77,6 +81,7 @@ async def chat(request: ChatRequest):
 @router.post("/frontend")
 async def chat_frontend(
     request: ChatRequest,
+    http_request: Request,
     internal_team: str | None = Header(None, alias="x-internal-team"),
 ):
     payload: dict = {"messages": request.messages}
@@ -101,7 +106,11 @@ async def chat_frontend(
 
     try:
         response = await get_client().post(
-            _gateway_url(), json=payload, headers=headers, timeout=30.0
+            _gateway_url(),
+            json=payload,
+            headers=headers,
+            params=list(http_request.query_params.multi_items()),
+            timeout=30.0,
         )
         return JSONResponse(content=response.json(), status_code=response.status_code)
     except httpx.RequestError as exc:

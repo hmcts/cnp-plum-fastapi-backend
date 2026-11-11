@@ -45,10 +45,14 @@ def test_chat_forwards_bearer_and_subscription_headers(client):
     mock_client = make_mock_http_client(200, {})
     with patch("app.http_client._client", mock_client), \
          patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")):
-        client.post("/chat", json={"messages": [{"role": "user", "content": "hi"}]})
+        client.post(
+            "/chat?api-version=2024-10-21",
+            json={"messages": [{"role": "user", "content": "hi"}]},
+        )
     _, kwargs = mock_client.post.call_args
     assert kwargs["headers"]["Authorization"] == "Bearer fake-token"
     assert kwargs["headers"]["Ocp-Apim-Subscription-Key"] == "test-sub-key"
+    assert kwargs["params"] == [("api-version", "2024-10-21")]
 
 
 def test_chat_injects_default_model_when_absent(client):
@@ -105,9 +109,13 @@ def test_chat_frontend_uses_frontend_subscription_key(client, frontend_env):
     mock_client = make_mock_http_client(200, {})
     with patch("app.http_client._client", mock_client), \
          patch("app.azure_auth.get_token", AsyncMock(return_value="fake-token")):
-        client.post("/chat/frontend", json={"messages": [{"role": "user", "content": "hi"}]})
+        client.post(
+            "/chat/frontend?api-version=2024-10-21",
+            json={"messages": [{"role": "user", "content": "hi"}]},
+        )
     _, kwargs = mock_client.post.call_args
     assert kwargs["headers"]["Ocp-Apim-Subscription-Key"] == "test-frontend-sub-key"
+    assert kwargs["params"] == [("api-version", "2024-10-21")]
 
 
 def test_chat_frontend_returns_500_when_key_missing(client):
